@@ -3,13 +3,32 @@ cd /tmp/rom # Depends on where source got synced
 
 # Normal build steps
 . build/envsetup.sh
-lunch aosp_mido-user
-export CCACHE_DIR=/tmp/ccache
-export CCACHE_EXEC=$(which ccache)
-export USE_CCACHE=1
-ccache -M 20G # It took only 6.4GB for mido
-ccache -o compression=true # Will save times and data to download and upload ccache, also negligible performance issue
-ccache -z # Clear old stats, so monitor script will provide real ccache statistics
+repopick 267369 # msm8226-common: camera: add support for matisse/millet devices
+repopick 305854 # msm8226-common: Update qseecom daemon service name
+repopick 305855 # msm8226-common: Don't build tinymix
+repopick 305856 # msm8226-common: Remove wificond from device makefiles
+repopick 305857 # msm8226-common: extract-files: CM_ROOT to LINEAGE_ROOT
+repopick 305858 # msm8226-common: sepolicy: fixes for Galaxy Tab 4
+repopick 305859 # msm8226-common: init: Resolve vendor HALs for early bootanimation start
+repopick 305871 # msm8226-common: Remove unsupported QCOM media codecs
+repopick 306321 # msm8226-common: move TimeKeep to device specific
+repopick 306585 # msm8226-common: stop building qcom touch service in common tree
+repopick 308599 # msm8226-common: sepolicy: Resolve denial for headset jack
+repopick 300584 # HID: core: Sanitize event code and type when mapping input
+repopick 301560 # defconfig: Rework of lineageos_{matisse*,millet*}_defconfig
+repopick 306548 # matisse-millet: defconfig: Enable MEMCG
+repopick 306549 # ARM: configs: regenerate matisse-millet family defconfig
+repopick 308043 # matisse-millet: defconfig: Disable serial console
+repopick 308044 # matisse-millet: defconfig: remove special HID drivers
+repopick 308355 # matisse-millet: defconfig: disable FM driver
+
+lunch lineage_matissewifi-userdebug
+#export CCACHE_DIR=/tmp/ccache
+#export CCACHE_EXEC=$(which ccache)
+#export USE_CCACHE=1
+#ccache -M 20G
+#ccache -o compression=true # Will save times and data to download and upload ccache, also negligible performance issue
+#ccache -z # Clear old stats, so monitor script will provide real ccache statistics
 
 # Next 8 lines should be run first to collect ccache and then upload, after doning it 1 or 2 times, our ccache will help to build without these 8 lines
 #make api-stubs-docs || echo no problem, we need ccache
@@ -24,19 +43,14 @@ ccache -z # Clear old stats, so monitor script will provide real ccache statisti
 
 
 # upload function for uploading rom zip file! I don't want unwanted builds in my google drive haha!
-up(){
-	curl --upload-file $1 https://transfer.sh/$(basename $1); echo
-	# 14 days, 10 GB limit
-}
-
 tg(){
-	bot_api=1692865707:AAHvKZogI5sUGtqjd2sZvNl8tib0Q_xcYkY # Your tg bot api, dont use my one haha
-	your_telegram_id=$1 # No need to touch 
+	bot_api=186070877:AAHSw7HB9IOEkRZA5CFQ5HgIQHNO73Mc2U0 # Your tg bot api, dont use my one haha
+	your_telegram_id=$1 # No need to touch
 	msg=$2 # No need to touch
 	curl -s "https://api.telegram.org/bot${bot_api}/sendmessage" --data "text=$msg&chat_id=${your_telegram_id}"
 }
 
-id=571213272 # Your telegram id
+id=121858468 # Your telegram id
 
 # Build command! j10 for 10 cpu, j8 for 8 cpu, otherwise memeroy will end up even its 24G
 # Upload rom zip file if succeed to build! Send notification to tg! And send shell to tg if build fails!
@@ -47,8 +61,8 @@ make hiddenapi-lists-docs || echo no problem
 make system-api-stubs-docs || echo no problem
 make test-api-stubs-docs || echo no problem
 
-make aex -j10 \
-	&& send_zip=$(up out/target/product/mido/*zip) && tg $id "Build Succeed!
+brunch matissewifi \
+	&& send_zip=$(up out/target/product/matissewifi/*zip) && tg $id "Build Succeed!
 $send_zip" \
 	|| tmate -S /tmp/tmate.sock new-session -d && tmate -S /tmp/tmate.sock wait tmate-ready && send_shell=$(tmate -S /tmp/tmate.sock display -p '#{tmate_ssh}') && tg $id "Build Failed" && tg $id "$send_shell" && ccache -s && sleep 2h
-ccache -s # Let's print ccache statistics finally
+#ccache -s # Let's print ccache statistics finally
